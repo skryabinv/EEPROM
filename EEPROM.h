@@ -25,7 +25,7 @@ EEPROM_Status EEPROM_Init(I2C_HandleTypeDef* hI2C,
 EEPROM_Status EEPROM_Read(uint16_t page, uint8_t* bytes, uint16_t size);
 EEPROM_Status EEPROM_Write(uint16_t page, uint8_t* bytes, uint16_t size);
 
-uint16_t EEPROM_getBuffersPageCount(uint16_t bufferSize);
+uint16_t EEPROM_getBuffersPagesCount(uint16_t bufferSize);
 
 #ifdef __cplusplus
 }
