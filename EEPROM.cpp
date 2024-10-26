@@ -151,5 +151,6 @@ EEPROM_Status EEPROM_Write(uint16_t page, uint8_t* bytes, uint16_t size) {
 }
 
 uint16_t EEPROM_getBuffersPageCount(uint16_t bufferSize) {
-    return sInstance.getCountOfPagesFor(bufferSize);
+    // + 1 - page for CRC
+    return sInstance.getCountOfPagesFor(bufferSize) + 1;
 }
