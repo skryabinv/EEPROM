@@ -77,7 +77,7 @@ private:
                 return status;
             }
             if constexpr(delay != 0) {
-                HAL_Delay(sWriteDelay);
+                HAL_Delay(delay);
             }
             bytesRemain -= countOfBytesToProcess;
             memoryAddress += mPageSize;
