@@ -17,15 +17,12 @@ public:
         if(config.hI2C == nullptr || config.hCRC == nullptr || config.pageSize == 0) {
             return EEPROM_Status_NotInitialized;
         }     
-        mI2C = config.hI2C;
-        mCRC = config.hCRC;
-        mPageSize = config.pageSize;
-        mDeviceAddress = config.deviceAddress;
+        mConfig = config;
         return EEPROM_Status_Sucess;
     }   
 
     auto isInitialized() const {
-        return mI2C != nullptr && mCRC != nullptr;
+        return mConfig.hI2C != nullptr && mConfig.hCRC != nullptr;
     }
 
     auto write(uint16_t page, uint8_t* buffer, uint16_t size, bool useCRC) const {               
@@ -57,13 +54,13 @@ public:
     }
 
     auto getCountOfPagesFor(uint16_t bufferSize) const -> uint16_t {
-        return bufferSize / mPageSize + 1;
+        return bufferSize / mConfig.pageSize + 1;
     }
     
 private:    
 
     auto getPageMemoryAddress(uint16_t page) const -> uint16_t {
-        return page * mPageSize;
+        return page * mConfig.pageSize;
     }
 
     template<typename IO>
@@ -71,9 +68,9 @@ private:
         auto memoryAddress = getPageMemoryAddress(page);
         auto ptr = buffer;
         for(uint16_t bytesRemain = size; bytesRemain > 0;) {
-            auto countOfBytesToProcess = bytesRemain > mPageSize ? mPageSize : bytesRemain;
-            auto status = inputOutputFunction(mI2C, 
-                          mDeviceAddress, 
+            auto countOfBytesToProcess = bytesRemain > mConfig.pageSize ? mConfig.pageSize : bytesRemain;
+            auto status = inputOutputFunction(mConfig.hI2C, 
+                          mConfig.deviceAddress, 
                           memoryAddress, I2C_MEMADD_SIZE_16BIT, 
                           ptr, countOfBytesToProcess, 
                           sTimeout); 
@@ -82,8 +79,8 @@ private:
             }
             HAL_Delay(delay);            
             bytesRemain -= countOfBytesToProcess;
-            memoryAddress += mPageSize;
-            ptr += mPageSize;
+            memoryAddress += mConfig.pageSize;
+            ptr += mConfig.pageSize;
         }
         return HAL_OK;
     }
@@ -94,7 +91,7 @@ private:
 
     auto writeCRC(uint16_t page, uint8_t* buffer, size_t bufferSize) const -> HAL_StatusTypeDef {
         auto crc = calcCRC(buffer, bufferSize);                
-        return HAL_I2C_Mem_Write(mI2C, mDeviceAddress, 
+        return HAL_I2C_Mem_Write(mConfig.hI2C, mConfig.deviceAddress, 
             getPageMemoryAddress(page),            
             I2C_MEMADD_SIZE_16BIT, 
             reinterpret_cast<uint8_t*>(&crc), sizeof(crc), 
@@ -106,7 +103,7 @@ private:
     }
 
     auto readCRC(uint16_t page, uint32_t& crc) const -> HAL_StatusTypeDef {                
-        return HAL_I2C_Mem_Read(mI2C, mDeviceAddress, 
+        return HAL_I2C_Mem_Read(mConfig.hI2C, mConfig.deviceAddress, 
             getPageMemoryAddress(page), 
             I2C_MEMADD_SIZE_16BIT, 
             reinterpret_cast<uint8_t*>(&crc), sizeof(crc), 
@@ -128,13 +125,9 @@ private:
     }
 
     auto calcCRC(uint8_t* buffer, uint16_t bufferSize) const -> uint32_t {
-        return HAL_CRC_Calculate(mCRC,  reinterpret_cast<uint32_t*>(buffer), bufferSize / 4);
+        return HAL_CRC_Calculate(mConfig.hCRC,  reinterpret_cast<uint32_t*>(buffer), bufferSize / 4);
     }
-
-    I2C_HandleTypeDef* mI2C{nullptr};
-    CRC_HandleTypeDef* mCRC{nullptr};
-    uint16_t mPageSize{64};
-    uint16_t mDeviceAddress{0b10100000};
+    EEPROM_Config mConfig{nullptr, nullptr, 0xA0, 64};    
 }; 
 
 static auto sInstance = EEPROM{};
