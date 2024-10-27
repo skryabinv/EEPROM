@@ -1,10 +1,24 @@
 #include "EEPROM.h"
 
+static EEPROM_Status decodeStatusHAL(HAL_StatusTypeDef status) {
+    switch (status) {
+        case HAL_OK:
+            return EEPROM_Status_Sucess;
+        case HAL_BUSY:
+            return EEPROM_Status_Busy;
+        case HAL_TIMEOUT:
+            return EEPROM_Status_Timeout;
+        default:        
+        break;    
+    }       
+    return EEPROM_Status_Error; 
+}
+
 #define RETURN_IF_ERROR(halStatus) \
 do { \
-    auto error = decodeStatus(halStatus); \
-    if(error != EEPROM_Status_Sucess) { \
-            return error;\
+    auto status = decodeStatusHAL(halStatus); \
+    if(status != EEPROM_Status_Sucess) { \
+            return status;\
     } \
 } while (0)
 
@@ -108,25 +122,12 @@ private:
             I2C_MEMADD_SIZE_16BIT, 
             reinterpret_cast<uint8_t*>(&crc), sizeof(crc), 
             sTimeout);
-    }    
-
-    static EEPROM_Status decodeStatus(HAL_StatusTypeDef status) {
-        switch (status) {
-             case HAL_OK:
-                return EEPROM_Status_Sucess;
-             case HAL_BUSY:
-                return EEPROM_Status_Busy;
-             case HAL_TIMEOUT:
-                return EEPROM_Status_Timeout;
-            default:        
-            break;    
-        }       
-        return EEPROM_Status_Error; 
-    }
+    }       
 
     auto calcCRC(uint8_t* buffer, uint16_t bufferSize) const -> uint32_t {
         return HAL_CRC_Calculate(mConfig.hCRC,  reinterpret_cast<uint32_t*>(buffer), bufferSize / 4);
     }
+    
     EEPROM_Config mConfig{nullptr, nullptr, 0xA0, 64};    
 }; 
 
