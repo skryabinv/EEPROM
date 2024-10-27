@@ -62,8 +62,8 @@ private:
         return page * mPageSize;
     }
 
-    template<uint16_t delay, typename IO>
-    auto iterateOverPages(int16_t page, uint8_t* buffer, size_t size, IO inputOutputFunction) const {
+    template<typename IO>
+    auto iterateOverPages(int16_t page, uint8_t* buffer, size_t size, IO inputOutputFunction, uint16_t delay) const {
         auto memoryAddress = getPageMemoryAddress(page);
         auto ptr = buffer;
         for(uint16_t bytesRemain = size; bytesRemain > 0;) {
@@ -76,9 +76,7 @@ private:
             if(status != HAL_OK) {
                 return status;
             }
-            if constexpr(delay != 0) {
-                HAL_Delay(delay);
-            }
+            HAL_Delay(delay);            
             bytesRemain -= countOfBytesToProcess;
             memoryAddress += mPageSize;
             ptr += mPageSize;
@@ -87,7 +85,7 @@ private:
     }
 
     auto writeBuffer(uint16_t page, uint8_t* buffer, size_t size) const -> HAL_StatusTypeDef {
-        return iterateOverPages<sWriteDelay>(page, buffer, size, HAL_I2C_Mem_Write);
+        return iterateOverPages(page, buffer, size, HAL_I2C_Mem_Write, sWriteDelay);
     }
 
     auto writeCRC(uint16_t page, uint8_t* buffer, size_t bufferSize) const -> HAL_StatusTypeDef {
@@ -100,7 +98,7 @@ private:
     }
 
     auto readBuffer(uint16_t page, uint8_t* buffer, size_t size) const -> HAL_StatusTypeDef {
-        return iterateOverPages<0>(page, buffer, size, HAL_I2C_Mem_Read);    
+        return iterateOverPages(page, buffer, size, HAL_I2C_Mem_Read, 0);    
     }
 
     auto readCRC(uint16_t page, uint32_t& crc) const -> HAL_StatusTypeDef {                
