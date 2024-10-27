@@ -13,11 +13,15 @@ class EEPROM {
     static constexpr auto sTimeout = 50;
     static constexpr auto sWriteDelay = 5;    
 public:
-    auto init(I2C_HandleTypeDef* i2c, CRC_HandleTypeDef* crc, uint16_t deviceAddress, uint16_t pageSize) {
-        mI2C = i2c;
-        mCRC = crc;
-        mPageSize = pageSize;
-        mDeviceAddress = deviceAddress;
+    auto init(const EEPROM_Config& config) {   
+        if(config.hI2C == nullptr || config.hCRC == nullptr || config.pageSize == 0) {
+            return EEPROM_Status_NotInitialized;
+        }     
+        mI2C = config.hI2C;
+        mCRC = config.hCRC;
+        mPageSize = config.pageSize;
+        mDeviceAddress = config.deviceAddress;
+        return EEPROM_Status_Sucess;
     }   
 
     auto isInitialized() const {
@@ -135,9 +139,12 @@ private:
 
 static auto sInstance = EEPROM{};
 
-EEPROM_Status EEPROM_Init(I2C_HandleTypeDef * i2c, CRC_HandleTypeDef* crc, uint16_t deviceAddress, uint16_t pageSize) {    
-    sInstance.init(i2c, crc, deviceAddress, pageSize);
-    return EEPROM_Status_Sucess;
+EEPROM_Config EEPROM_makeDefaultConfig(I2C_HandleTypeDef* hI2C, CRC_HandleTypeDef* hCRC) {
+    return EEPROM_Config{ hI2C, hCRC, 0xA0, 64};
+}
+
+EEPROM_Status EEPROM_Init(EEPROM_Config config) {        
+    return sInstance.init(config);    
 }
 
 EEPROM_Status EEPROM_Read(uint16_t page, uint8_t* bytes, uint16_t size) {   
