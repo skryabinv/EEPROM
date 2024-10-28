@@ -1,4 +1,4 @@
-#include "stm32f1xx_hal.h"
+#include "main.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
